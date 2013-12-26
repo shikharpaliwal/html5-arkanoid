@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>Flutterbee Tech. Pvt. Ltd.</title>
+		<script src="js/game.js"></script>
+		<style type="text/css">
+			canvas {
+				padding-left: 0;
+		    padding-right: 0;
+		    margin-left: auto;
+		    margin-right: auto;
+		    display: block;
+		    box-shadow: 0px 0px 30px #7B68EE;
+			}
+		</style>
+	</head>
+
+	<body>
+		<h1 align="center">Flutterbee  Gaming arena</h1>
+		<canvas id="game", height="800", width="800"> </canvas>
+		<script type="text/javascript">
+			function doKeyDown(e) {
+				if (e.keyCode == 37){
+					game.onKeyLeft();
+				}
+				else if (e.keyCode == 39) {
+					game.onKeyRight();
+				}
+			}
+			function getMousePos(canvas, evt) {
+        var rect = canvas.getBoundingClientRect();
+        return {
+          x: evt.clientX - rect.left,
+          y: evt.clientY - rect.top
+        };
+      }
+
+			var canvas = document.getElementById("game");
+			var ctx = canvas.getContext("2d");
+			var game = new Game(ctx);
+
+			window.addEventListener( "keydown", doKeyDown, true)
+			canvas.addEventListener('mousemove', function(evt) {
+				game.mouseMove(getMousePos(canvas, evt).x);
+			}, false);
+
+			game.init();
+
+			//setInterval("game.update()",10)
+		</script>
+	</body>
+</html>
