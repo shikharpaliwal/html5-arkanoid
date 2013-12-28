@@ -21,11 +21,18 @@
 		<canvas id="game", height="800", width="800"> </canvas>
 		<script type="text/javascript">
 			function doKeyDown(e) {
-				if (e.keyCode == 37){
+				switch (e.keyCode) {
+				case 37 :
 					game.onKeyLeft();
-				}
-				else if (e.keyCode == 39) {
+					break;
+				case 39 :
 					game.onKeyRight();
+					break;
+				case 32 :
+					if (game.space_active){
+						game.init();
+					}
+					break;
 				}
 			}
 			function getMousePos(canvas, evt) {
@@ -45,7 +52,9 @@
 				game.mouseMove(getMousePos(canvas, evt).x);
 			}, false);
 
-			game.init();
+			ctx.font = "bold 30px Calibri";
+			ctx.textAlign = 'center';
+			ctx.fillText("Press spacebar to play", ctx.canvas.width/2, ctx.canvas.height/2);
 
 			//setInterval("game.update()",10)
 		</script>

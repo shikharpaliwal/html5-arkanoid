@@ -10,11 +10,11 @@ function Game(context){
 	this.move_bar = 30;
 
 	this.ball_radius = 7;
-	this.ball_x = this.context_width/3;
-	this.ball_y = this.context_height/2;
+	this.ball_x;
+	this.ball_y;
 
-	this.ball_vx = -5;
-	this.ball_vy = -5;
+	this.ball_vx;
+	this.ball_vy;
 
 	this.brick_area_width = this.context_width*0.7;
 	this.brick_area_height = this.context_height*0.3;
@@ -29,11 +29,19 @@ function Game(context){
 	this.brick_in_column = 5;
 	this.brick_gap = 10;
 
-	this.score = 0;
+	this.score;
 
 	this.stop = false;
+	this.space_active = true;
 
 	this.init = function(){
+		this.space_active = false;
+		this.stop = false;
+		this.score = 0;
+		this.ball_x = this.context_width/3;
+		this.ball_y = this.context_height/2;
+		this.ball_vx = -5;
+		this.ball_vy = -5;
 		for (var i = 0; i < this.brick_in_row; i++){
 			this.brick_status[i] = new Array(5);
 			for (var j = 0; j < this.brick_in_column; j++){
@@ -75,23 +83,41 @@ function Game(context){
 	};
 
 	this.game_over = function(){
-		// this.context.beginPath();
-		// this.context.strokeStyle="#FFFFFF";
-  //   this.context.moveTo(0,0);
-  //   this.context.lineTo(0,this.context_height);
-  //   this.context.lineTo(this.context_width, this.context_height);
-  //   this.context.lineTo(this.context_width,0);
-  //   this.context.closePath();
-    this.context.fillStyle = "rgba(255, 255, 255,0.1)";
-    this.context.fillRect(0,0,this.width/2, this.height);
-    // this.context.stroke();
-
-		this.context.font = "bold 16px Arial";
-		this.context.fillText("GAME OVER", this.c, 600);
+    this.context.fillStyle = "rgba(255, 255, 255,0.6)";
+    this.context.fillRect(0, 0, this.context_width, this.context_width);
+    this.context.fillStyle = "grey";
+		this.context.font = "bold 15px Calibri";
+		this.context.textAlign = 'center';
+		this.context.fillText("YOUR SCORE!", this.context_width/2, this.context_height/2);
+		this.context.font = "bold 30px Calibri";
+		this.context.fillText(this.score, this.context_width/2, this.context_height/2 + 50);
+		this.context.font = "bold 15px Calibri";
+		this.context.fillText("Press spacebar to play again", this.context_width/2, this.context_height/2 + 100);
+		this.space_active = true;
 	}
+
+	this.draw = function(){
+		this.clearCanvas();
+		this.drawBar();
+		this.drawBrick();
+		this.drawBall();
+		this.printScore();
+	};
 
 	this.clearCanvas = function() {
 		this.context.clearRect(0,0,this.context_width,this.context_height);
+	};
+
+	this.drawBrick = function() {
+		for (var i = 0; i < this.brick_in_row; i++){
+			for (var j = 0; j < this.brick_in_column; j++){
+				if (this.brick_status[i][j] == true) {
+					brick_x = this.brick_area_x + i*(this.brick_width+this.brick_gap);
+					brick_y = this.brick_area_y + j*(this.brick_height+this.brick_gap);
+					this.drawRect(brick_x, brick_y, this.brick_width, this.brick_height,"#00CED1");
+				}
+			}
+		}
 	};
 
 	this.drawBar = function() {
@@ -107,28 +133,25 @@ function Game(context){
 	  this.context.closePath();
 	};
 
+	this.printScore = function() {
+		this.context.fillStyle = "grey";
+		this.context.font = "15px Calibri";
+		this.context.textAlign = 'center';
+		this.context.fillText("SCORE : ", this.context_width - 180, 40);
+		this.context.fillText(this.score, this.context_width - 100, 40);
+	};
+
 	this.drawRect = function(x,y,w,h,color){
 		this.context.beginPath();
 		this.context.strokeStyle = color;
-		this.context.lineWidth = 3;    this.context.moveTo(x,y);
+		this.context.lineWidth = 3;    
+		this.context.moveTo(x,y);
     this.context.lineTo(x,y + h);
     this.context.lineTo(x + w,y + h);
     this.context.lineTo(x + w,y);
     this.context.closePath();
     this.context.stroke();
 	}
-
-	this.drawBrick = function() {
-		for (var i = 0; i < this.brick_in_row; i++){
-			for (var j = 0; j < this.brick_in_column; j++){
-				if (this.brick_status[i][j] == true) {
-					brick_x = this.brick_area_x + i*(this.brick_width+this.brick_gap);
-					brick_y = this.brick_area_y + j*(this.brick_height+this.brick_gap);
-					this.drawRect(brick_x, brick_y, this.brick_width, this.brick_height,"#00CED1");
-				}
-			}
-		}
-	};
 
 	this.check_collision = function (){
 		wall_x = Math.max(this.ball_radius, this.ball_vx);
@@ -150,6 +173,7 @@ function Game(context){
 									this.ball_vx *= -1;
 								}
 								this.brick_status[i][j] = false;
+								this.score += 10;
 								return;
 							}
 						}
@@ -157,13 +181,6 @@ function Game(context){
 				}
 			}
 		}
-	};
-
-	this.draw = function(){
-		this.clearCanvas();
-		this.drawBar();
-		this.drawBrick();
-		this.drawBall();
 	};
 
 	this.moveBall = function(){
@@ -222,10 +239,13 @@ function Game(context){
 	};
 
 	this.mouseMove = function(x) {
-		this.bar_x = x;
+		this.bar_x = x - this.bar_width/2;
 		a = this.context_width - this.bar_width;
 		if (this.bar_x > a) {
 			this.bar_x = a;
+		}
+		else if (this.bar_x < 0){
+			this.bar_x = 0;
 		}
 	};
 }
