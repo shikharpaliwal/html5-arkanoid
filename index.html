@@ -51,8 +51,23 @@
 				game.mouseMove(getMousePos(canvas, evt).x);
 			}, false);
 
-			ctx.font = "bold 30px Calibri";
+			//game.drawRect(0,0,this.context_width,this.context_height,'#B70B13');
+			
+			ctx.beginPath();
+			ctx.strokeStyle = "#FFFFFF";
+      ctx.fillStyle = '#B70B13';
+      ctx.lineWidth = 1;   
+			ctx.moveTo(0,0);
+	    ctx.lineTo(0,ctx.canvas.height);
+	    ctx.lineTo(ctx.canvas.width,ctx.canvas.height);
+	    ctx.lineTo(ctx.canvas.width,0);
+	    ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+			ctx.font = "bold 30px Verdana";
 			ctx.textAlign = 'center';
+			ctx.fillStyle = "white";
 			ctx.fillText("Press spacebar to play", ctx.canvas.width/2, ctx.canvas.height/2);
 
 			//setInterval("game.update()",10)
