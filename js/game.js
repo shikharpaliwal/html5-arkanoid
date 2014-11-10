@@ -83,25 +83,29 @@ function Game(context){
 	};
 
 	this.game_over = function(){
-    this.context.fillStyle = "rgba(255, 255, 255,0.6)";
-    this.context.fillRect(0, 0, this.context_width, this.context_width);
-    this.context.fillStyle = "grey";
-		this.context.font = "bold 15px Calibri";
+    this.clearCanvas();
+		this.drawRect(0,0,this.context_width,this.context_height,'#B70B13');
+		this.drawBar();
+    //this.context.fillRect(0, 0, this.context_width, this.context_width);
+    this.context.fillStyle = "white";
+		this.context.font = "bold 15px Verdana";
 		this.context.textAlign = 'center';
 		this.context.fillText("YOUR SCORE!", this.context_width/2, this.context_height/2);
-		this.context.font = "bold 30px Calibri";
+		this.context.font = "bold 30px Verdana";
 		this.context.fillText(this.score, this.context_width/2, this.context_height/2 + 50);
-		this.context.font = "bold 15px Calibri";
+		this.context.font = "15px Verdana";
 		this.context.fillText("Press spacebar to play again", this.context_width/2, this.context_height/2 + 100);
 		this.space_active = true;
 	}
 
 	this.draw = function(){
 		this.clearCanvas();
+		this.drawRect(0,0,this.context_width,this.context_height,'#B70B13');
 		this.drawBar();
 		this.drawBrick();
-		this.drawBall();
-		this.printScore();
+		//this.drawBall();
+		this.drawRect(this.ball_x-this.ball_radius,this.ball_y-this.ball_radius,2*this.ball_radius,2*this.ball_radius,'#FFFFFF');
+		//this.printScore();
 	};
 
 	this.clearCanvas = function() {
@@ -114,14 +118,14 @@ function Game(context){
 				if (this.brick_status[i][j] == true) {
 					brick_x = this.brick_area_x + i*(this.brick_width+this.brick_gap);
 					brick_y = this.brick_area_y + j*(this.brick_height+this.brick_gap);
-					this.drawRect(brick_x, brick_y, this.brick_width, this.brick_height,"#00CED1");
+					this.drawRect(brick_x, brick_y, this.brick_width, this.brick_height,"#FFFFFF");
 				}
 			}
 		}
 	};
 
 	this.drawBar = function() {
-		this.drawRect(this.bar_x, this.bar_y, this.bar_width, this.bar_height, "#32CD32");
+		this.drawRect(this.bar_x, this.bar_y, this.bar_width, this.bar_height, "#FFFFFF");
 	};
 
 	this.drawBall = function() {
@@ -134,7 +138,7 @@ function Game(context){
 	};
 
 	this.printScore = function() {
-		this.context.fillStyle = "grey";
+		this.context.fillStyle = "white";
 		this.context.font = "15px Calibri";
 		this.context.textAlign = 'center';
 		this.context.fillText("SCORE : ", this.context_width - 180, 40);
@@ -143,13 +147,16 @@ function Game(context){
 
 	this.drawRect = function(x,y,w,h,color){
 		this.context.beginPath();
-		this.context.strokeStyle = color;
-		this.context.lineWidth = 3;    
+		this.context.strokeStyle = "#FFFFFF";
+		this.context.fillStyle = color;
+
+		this.context.lineWidth = 1;    
 		this.context.moveTo(x,y);
     this.context.lineTo(x,y + h);
     this.context.lineTo(x + w,y + h);
     this.context.lineTo(x + w,y);
     this.context.closePath();
+    this.context.fill(); 
     this.context.stroke();
 	}
 
