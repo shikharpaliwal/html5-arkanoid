@@ -40,8 +40,8 @@ function Game(context){
 		this.score = 0;
 		this.ball_x = this.context_width/3;
 		this.ball_y = this.context_height/2;
-		this.ball_vx = -5;
-		this.ball_vy = -5;
+		this.ball_vx = -10;
+		this.ball_vy = -10;
 		for (var i = 0; i < this.brick_in_row; i++){
 			this.brick_status[i] = new Array(5);
 			for (var j = 0; j < this.brick_in_column; j++){
@@ -65,7 +65,7 @@ function Game(context){
       window.webkitRequestAnimationFrame ||
       window.mozRequestAnimationFrame    ||
       function( callback ){
-        window.setTimeout(callback, 1000 / 60);
+        window.setTimeout(callback, 1000 / 30);
       };
 	})();
 
@@ -157,9 +157,11 @@ function Game(context){
 		wall_x = Math.max(this.ball_radius, this.ball_vx);
 		wall_y = Math.max(this.ball_radius, this.ball_vy);
 		if (this.ball_x > this.brick_area_x-wall_x && this.ball_x < this.brick_area_x+this.brick_area_width+wall_x && this.ball_y > this.brick_area_y-wall_y && this.ball_y < this.brick_area_y+this.brick_area_height+wall_y){
+			flag = true;
 			for (var i = 0; i < this.brick_in_row; i++){
 				for (var j = 0; j < this.brick_in_column; j++){
 					if (this.brick_status[i][j] == true) {
+						flag = false;
 						zone_x = this.brick_area_x + i*(this.brick_width+this.brick_gap) - wall_x;
 						zone_y = this.brick_area_y + j*(this.brick_height+this.brick_gap) - wall_y;
 						zone_width = this.brick_width + 2*wall_x;
@@ -180,15 +182,24 @@ function Game(context){
 					}
 				}
 			}
+			if (flag == true){
+				this.stop = true;
+			}
 		}
 	};
 
 	this.moveBall = function(){
 		this.ball_x += this.ball_vx;
 		this.ball_y += this.ball_vy;
+		console.log("x");
+		console.log(this.ball_x);
+		console.log("y");
+		console.log(this.ball_y);
+
 		wall_x = Math.max(this.ball_radius, this.ball_vx);
 		wall_y = Math.max(this.ball_radius, this.ball_vy);
 		if (this.ball_y < wall_y){
+			//console.log("1");
 			if (this.ball_x < wall_x || this.ball_x > this.context_width - wall_x){
 				this.ball_vx *= -1;
 				this.ball_vy *= -1;
@@ -198,27 +209,34 @@ function Game(context){
 			}
 		}
 		else if (this.ball_x < wall_x){
+			//console.log("2");
 			if (this.ball_y > this.bar_y - wall_y && this.bar_x < wall_x){
 				this.ball_vx *= -1;
 				this.ball_vy *= -1;
 			}
-			else if (this.ball_y < this.bar_y - wall_y) {
+			else  {
 				this.ball_vx *= -1;
 			}
 		}
 		else if (this.ball_x > this.context_width - wall_x){
+			//console.log("3");
 			if (this.ball_y > this.bar_y - wall_y && this.bar_x + this.bar_width > this.context_width - wall_x){
+				//console.log("31");
 				this.ball_vx *= -1;
 				this.ball_vy *= -1;
 			}
-			else if (this.ball_y < this.bar_y - wall_y) {
+			else {
+				//console.log("32");
 				this.ball_vx *= -1;
 			}
+			//this.stop = true;
 		}
-		else if (this.ball_x > this.bar_x && this.ball_x < this.bar_x + this.bar_width && this.ball_y > this.bar_y - wall_y && this.ball_y < this.bar_y){
+		else if (this.ball_x > (this.bar_x - 5) && this.ball_x < (this.bar_x + this.bar_width + 5) && this.ball_y > (this.bar_y - wall_y - 5) && this.ball_y < (this.bar_y + 5)) {
+			//console.log("4");
 			this.ball_vy *= -1;
 		}
-		else if (this.ball_y > this.context_height + this.ball_radius) {
+		else if (this.ball_y > this.context_height) {
+			//console.log("5");
 			this.stop = true;
 		}
 	};
