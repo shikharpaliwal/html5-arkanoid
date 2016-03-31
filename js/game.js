@@ -1,276 +1,309 @@
-function Game(context){
-	this.context = context;
-	this.context_width = context.canvas.width;
-	this.context_height = context.canvas.height;
+function Game(context, questionGenerator){
 
-	this.bar_height = 25;
-	this.bar_width = 100;
-	this.bar_x = 5;
-	this.bar_y = this.context_height - this.bar_height - 5;
-	this.move_bar = 30;
+  this.context = context;
+  this.context_width = context.canvas.width;
+  this.context_height = context.canvas.height;
 
-	this.ball_radius = 7;
-	this.ball_x;
-	this.ball_y;
+  this.questionGenerator = questionGenerator;
 
-	this.ball_vx;
-	this.ball_vy;
+  this.score = 0;
+  this.timeLeft = 30;
 
-	this.brick_area_width = this.context_width*0.7;
-	this.brick_area_height = this.context_height*0.3;
-	this.brick_area_x = 0.15*this.context_width;
-	this.brick_area_y = 0.2*this.context_height;
+  this.questionCoordinates = [
+    [this.context_width*0.22,this.context_height*0.1 + this.context_width*0.57],
+    [this.context_width*0.47,this.context_height*0.1 + this.context_width*0.28],
+    [this.context_width*0.82,this.context_height*0.1 + this.context_width*0.45]
+  ];
 
-	this.brick_height = 25;
-	this.brick_width = 71;
-	this.brick_status = new Array(9);
+  this.answerCoordinates = [
+    [this.context_width*0.255,this.context_height*0.885],
+    [this.context_width*0.755,this.context_height*0.885]
+  ];
 
-	this.brick_in_row = 7;
-	this.brick_in_column = 5;
-	this.brick_gap = 10;
+  this.onLowScoreMessages = [
+    ['We feel for you bro!', 'Try Again'],
+    ['Haar ke jeetne wale ko Baazigar kehte hain!',''],
+    ['Keep calm and try again!',''],
+    ['Bade bade deshon mein aisi choti choti baatein', 'hoti rehti hain! Phir se try karo'],
+    ['Kapoor Saab kya kahenge ?', 'Phir se try karo'],
+    ['Sharmaji ke bete ne 15 score kiya!', 'Aur tum ?'],
+    ['Log kya kahenge ?', 'Try Again']
+  ]
 
-	this.score;
+  this.questionSet;
 
-	this.stop = false;
-	this.space_active = true;
+  this.timerStarted = false;
 
-	this.init = function(){
-		this.space_active = false;
-		this.stop = false;
-		this.score = 0;
-		this.ball_x = this.context_width/3;
-		this.ball_y = this.context_height/2;
-		this.ball_vx = -10;
-		this.ball_vy = -10;
-		for (var i = 0; i < this.brick_in_row; i++){
-			this.brick_status[i] = new Array(5);
-			for (var j = 0; j < this.brick_in_column; j++){
-				this.brick_status[i][j] = true;
-			}
-		}
-		(function animloop(){
-			request = requestAnimFrame(animloop);
-			if (game.stop){
-				cancelRequestAnimFrame(request);
-				game.game_over();
-  		}  
-  		else {	
-				game.update();
-			}
-		})();
-	};
+  this.setIntervalId;
 
-	window.requestAnimFrame = (function(){
-	  return  window.requestAnimationFrame ||
-      window.webkitRequestAnimationFrame ||
-      window.mozRequestAnimationFrame    ||
-      function( callback ){
-        window.setTimeout(callback, 1000 / 30);
-      };
-	})();
+  this.init = function(){
+    this.drawObjects();
+    window.addEventListener("mousedown", this.onOptionClick, false);
+  };
 
-	window.cancelRequestAnimFrame = (function() {
-	  return window.cancelAnimationFrame         ||
-      window.webkitCancelRequestAnimationFrame ||
-      window.mozCancelRequestAnimationFrame    ||
-      clearTimeout
-	} )();
+  this.onOptionClick = function(event){
+    if (!game.timerStarted){
+      game.setIntervalId = window.setInterval(function(){
+        game.timeLeft -= 1;
+        if (game.timeLeft < 0){
+          window.removeEventListener("mousedown", game.onOptionClick, false);
+          window.clearInterval(game.setIntervalId);
+          game.gameOver();
+        }
+        else{
+          game.printTime();
+        }
+      }, 1000);
+      game.timerStarted = true;
+    }
+    x = event.pageX;
+    y = event.pageY;
+    if ( x >= 0 && x < game.context_width*0.5 && y >= game.context_height*0.75 && y <= game.context_height) {
+      if (game.questionSet[3] === 1){
+        game.selectRightOption();
+      }
+      else {
+        game.selectWrongOption();
+      }
+    }
+    else if ( x >= game.context_width*0.5 && x < game.context_width && y >= game.context_height*0.75 && y <= game.context_height) {
+      if (game.questionSet[3] === 2){
+        game.selectRightOption();
+      }
+      else {
+        game.selectWrongOption();
+      }
+    }
+  }
 
-	this.update = function(){
-		this.moveBall();
-		this.check_collision();
-		this.draw();
-	};
+  this.selectRightOption = function(){
+    this.score += 1;
+    this.drawObjects();
+  }
 
-	this.game_over = function(){
-    this.clearCanvas();
-		this.drawRect(0,0,this.context_width,this.context_height,'#B70B13');
-		this.drawBar();
-    //this.context.fillRect(0, 0, this.context_width, this.context_width);
+  this.selectWrongOption = function(){
+    this.score -= 1;
+    this.drawObjects();
+  }
+
+  this.drawObjects = function(){
+
+    this.drawRect(0,0,this.context_width,this.context_height,'#D3F4F3');
+
+    // Display score
+    this.printScore();
+
+    // Display time
+    this.printTime();
+
+    // Draw Question kite
+    var questionKiteImg = document.getElementById('question-kite-img');
+    this.context.drawImage(questionKiteImg, 0, this.context_height*0.1, this.context_width, this.context_width);
+
+    // Draw Option Rolls
+    var rollImg = document.getElementById('roll-img');
+    this.context.drawImage(rollImg, 0, this.context_height*0.75, this.context_width, this.context_height*0.25);
+
+    // Get question and print it
+    this.setQuestion();
+    this.printQuestion();
+  };
+
+  this.printScore = function(){
+    // Set writing style
+    this.context.fillStyle = "#A457E6";
+    this.context.font = "20px Arial";
+    this.context.textAlign = 'center';
+    // Display score
+    this.context.fillText("SCORE : " + this.score.toString(), this.context_width*0.2, this.context_height*0.07);
+  }
+
+  this.printTime = function(){
+    this.drawRect(this.context_width*0.7,0,this.context_width,this.context_height*0.1,'#D3F4F3');
+    // Set writing style
+    this.context.fillStyle = "#EF5E3C";
+    this.context.font = "20px Arial";
+    this.context.textAlign = 'center';
+    // Display score
+    this.context.fillText("00:" + this.timeLeft.toString(), this.context_width*0.85, this.context_height*0.07);
+  }
+
+  this.printQuestion = function(){
+    var randomKite = Math.floor( Math.random()*3);
+    var questionCoordinate = this.questionCoordinates[randomKite];
+    // Set writing style
     this.context.fillStyle = "white";
-		this.context.font = "bold 15px Verdana";
-		this.context.textAlign = 'center';
-		this.context.fillText("YOUR SCORE!", this.context_width/2, this.context_height/2);
-		this.context.font = "bold 30px Verdana";
-		this.context.fillText(this.score, this.context_width/2, this.context_height/2 + 50);
-		this.context.font = "15px Verdana";
-		this.context.fillText("Press spacebar to play again", this.context_width/2, this.context_height/2 + 100);
-		this.space_active = true;
-	}
+    this.context.font = "27px Arial";
+    this.context.textAlign = 'center';
+    this.context.fillText(this.questionSet[0], questionCoordinate[0], questionCoordinate[1]);
+    this.context.fillText(this.questionSet[1], this.answerCoordinates[0][0], this.answerCoordinates[0][1]);
+    this.context.fillText(this.questionSet[2], this.answerCoordinates[1][0], this.answerCoordinates[1][1]);
+  }
 
-	this.draw = function(){
-		this.clearCanvas();
-		this.drawRect(0,0,this.context_width,this.context_height,'#B70B13');
-		this.drawBar();
-		this.drawBrick();
-		//this.drawBall();
-		this.drawRect(this.ball_x-this.ball_radius,this.ball_y-this.ball_radius,2*this.ball_radius,2*this.ball_radius,'#FFFFFF');
-		//this.printScore();
-	};
+  this.drawRect = function(x,y,w,h,color){
+    this.context.beginPath();
+    this.context.strokeStyle = "#D3F4F3";
+    this.context.fillStyle = color;
 
-	this.clearCanvas = function() {
-		this.context.clearRect(0,0,this.context_width,this.context_height);
-	};
-
-	this.drawBrick = function() {
-		for (var i = 0; i < this.brick_in_row; i++){
-			for (var j = 0; j < this.brick_in_column; j++){
-				if (this.brick_status[i][j] == true) {
-					brick_x = this.brick_area_x + i*(this.brick_width+this.brick_gap);
-					brick_y = this.brick_area_y + j*(this.brick_height+this.brick_gap);
-					this.drawRect(brick_x, brick_y, this.brick_width, this.brick_height,"#FFFFFF");
-				}
-			}
-		}
-	};
-
-	this.drawBar = function() {
-		this.drawRect(this.bar_x, this.bar_y, this.bar_width, this.bar_height, "#FFFFFF");
-	};
-
-	this.drawBall = function() {
-		this.context.beginPath();
-	  this.context.strokeStyle="#DC143C";
-	  this.context.lineWidth = 4;
-	  this.context.arc(this.ball_x,this.ball_y,this.ball_radius,0,Math.PI*2,true);
-	  this.context.stroke();
-	  this.context.closePath();
-	};
-
-	this.printScore = function() {
-		this.context.fillStyle = "white";
-		this.context.font = "15px Calibri";
-		this.context.textAlign = 'center';
-		this.context.fillText("SCORE : ", this.context_width - 180, 40);
-		this.context.fillText(this.score, this.context_width - 100, 40);
-	};
-
-	this.drawRect = function(x,y,w,h,color){
-		this.context.beginPath();
-		this.context.strokeStyle = "#FFFFFF";
-		this.context.fillStyle = color;
-
-		this.context.lineWidth = 1;    
-		this.context.moveTo(x,y);
+    this.context.lineWidth = 1;
+    this.context.moveTo(x,y);
     this.context.lineTo(x,y + h);
     this.context.lineTo(x + w,y + h);
     this.context.lineTo(x + w,y);
     this.context.closePath();
-    this.context.fill(); 
+    this.context.fill();
     this.context.stroke();
-	}
+  }
 
-	this.check_collision = function (){
-		wall_x = Math.max(this.ball_radius, this.ball_vx);
-		wall_y = Math.max(this.ball_radius, this.ball_vy);
-		if (this.ball_x > this.brick_area_x-wall_x && this.ball_x < this.brick_area_x+this.brick_area_width+wall_x && this.ball_y > this.brick_area_y-wall_y && this.ball_y < this.brick_area_y+this.brick_area_height+wall_y){
-			flag = true;
-			for (var i = 0; i < this.brick_in_row; i++){
-				for (var j = 0; j < this.brick_in_column; j++){
-					if (this.brick_status[i][j] == true) {
-						flag = false;
-						zone_x = this.brick_area_x + i*(this.brick_width+this.brick_gap) - wall_x;
-						zone_y = this.brick_area_y + j*(this.brick_height+this.brick_gap) - wall_y;
-						zone_width = this.brick_width + 2*wall_x;
-						zone_height = this.brick_height + 2*wall_y;
-						if (this.ball_x > zone_x && this.ball_x < zone_x + zone_width){
-							if (this.ball_y > zone_y && this.ball_y < zone_y + zone_height){
-								if (this.ball_y < zone_y + wall_y || this.ball_y > zone_y + zone_height - wall_y){
-									this.ball_vy *= -1;
-								}
-								else {
-									this.ball_vx *= -1;
-								}
-								this.brick_status[i][j] = false;
-								this.score += 10;
-								return;
-							}
-						}
-					}
-				}
-			}
-			if (flag == true){
-				this.stop = true;
-			}
-		}
-	};
+  this.setQuestion = function(){
+    this.questionSet = this.questionGenerator.generate();
+  }
 
-	this.moveBall = function(){
-		this.ball_x += this.ball_vx;
-		this.ball_y += this.ball_vy;
-		console.log("x");
-		console.log(this.ball_x);
-		console.log("y");
-		console.log(this.ball_y);
+  this.gameOver = function(){
+    var scoreImg = document.getElementById('score-img');
+    this.context.drawImage(scoreImg, 0, 0, canvas.width, canvas.height);
 
-		wall_x = Math.max(this.ball_radius, this.ball_vx);
-		wall_y = Math.max(this.ball_radius, this.ball_vy);
-		if (this.ball_y < wall_y){
-			//console.log("1");
-			if (this.ball_x < wall_x || this.ball_x > this.context_width - wall_x){
-				this.ball_vx *= -1;
-				this.ball_vy *= -1;
-			}
-			else {
-				this.ball_vy *= -1;
-			}
-		}
-		else if (this.ball_x < wall_x){
-			//console.log("2");
-			if (this.ball_y > this.bar_y - wall_y && this.bar_x < wall_x){
-				this.ball_vx *= -1;
-				this.ball_vy *= -1;
-			}
-			else  {
-				this.ball_vx *= -1;
-			}
-		}
-		else if (this.ball_x > this.context_width - wall_x){
-			//console.log("3");
-			if (this.ball_y > this.bar_y - wall_y && this.bar_x + this.bar_width > this.context_width - wall_x){
-				//console.log("31");
-				this.ball_vx *= -1;
-				this.ball_vy *= -1;
-			}
-			else {
-				//console.log("32");
-				this.ball_vx *= -1;
-			}
-			//this.stop = true;
-		}
-		else if (this.ball_x > (this.bar_x - 5) && this.ball_x < (this.bar_x + this.bar_width + 5) && this.ball_y > (this.bar_y - wall_y - 5) && this.ball_y < (this.bar_y + 5)) {
-			//console.log("4");
-			this.ball_vy *= -1;
-		}
-		else if (this.ball_y > this.context_height) {
-			//console.log("5");
-			this.stop = true;
-		}
-	};
+    this.context.fillStyle = "#685545";
+    this.context.font = "bold 27px Arial";
+    this.context.textAlign = 'center';
+    this.context.fillText("GAME OVER", this.context_width*0.5, this.context_height*0.1);
 
-	this.onKeyLeft = function() {
-		this.bar_x -= this.move_bar;
-		if (this.bar_x < 0) {
-			this.bar_x = 0;
-		}
-	};
+    this.context.font = "23px Arial";
+    this.context.fillText("Your Score", this.context_width*0.5, this.context_height*0.17);
 
-	this.onKeyRight = function() {
-		this.bar_x += this.move_bar;
-		a = this.context_width - this.bar_width;
-		if (this.bar_x > a) {
-			this.bar_x = a;
-		}
-	};
+    this.context.fillStyle = "#EF5E3C";
+    this.context.font = "bold 90px Arial";
+    if (this.score < 0){
+      this.score = 0;
+    }
+    this.context.fillText(this.score, this.context_width*0.5, this.context_height*0.34);
 
-	this.mouseMove = function(x) {
-		this.bar_x = x - this.bar_width/2;
-		a = this.context_width - this.bar_width;
-		if (this.bar_x > a) {
-			this.bar_x = a;
-		}
-		else if (this.bar_x < 0){
-			this.bar_x = 0;
-		}
-	};
+    this.context.fillStyle = "#685545";
+    this.context.font = "12px Arial";
+
+    if(this.score <= 0){
+      this.context.font = "15px Arial";
+      displayMessage = this.onLowScoreMessages[Math.floor( Math.random()*7)];
+      this.context.fillText(displayMessage[0], this.context_width*0.5, this.context_height*0.5);
+      this.context.fillText(displayMessage[1], this.context_width*0.5, this.context_height*0.56);
+      this.context.fillStyle = "white";
+      this.context.font = "12px Arial";
+      this.context.fillText("Score more than 10 to unlock a reward!", this.context_width*0.5, this.context_height*0.82);
+    }
+    else{
+      var discount = 0;
+      if (this.score > 0 && this.score <= 17){
+        discount = 5;
+        this.context.fillText("You unlocked FLAT 5% off for your next order", this.context_width*0.5, this.context_height*0.42);
+        this.context.fillStyle = "white";
+        this.context.font = "12px Arial";
+        this.context.fillText("Score more than 17 to unlock a better reward!", this.context_width*0.5, this.context_height*0.82);
+      }
+      else if (this.score > 17 && this.score <= 25){
+        discount = 10;
+        this.context.fillText("You unlocked FLAT 10% off for your next order", this.context_width*0.5, this.context_height*0.42);
+        this.context.fillStyle = "white";
+        this.context.font = "12px Arial";
+        this.context.fillText("Score more than 25 to unlock a better reward!", this.context_width*0.5, this.context_height*0.82);
+      }
+      else if (this.score > 25){
+        discount = 20;
+        this.context.fillText("You unlocked FLAT 20% off for your next order", this.context_width*0.5, this.context_height*0.42);
+        this.context.fillStyle = "white";
+        this.context.font = "12px Arial";
+        this.context.fillText("Mogambo khush hua!", this.context_width*0.5, this.context_height*0.82);
+      }
+      this.context.beginPath();
+      this.context.moveTo(this.context_width*0.15,this.context_height*0.45);
+      this.context.lineTo(this.context_width*0.85,this.context_height*0.45);
+      this.context.lineWidth = 0.3;
+      this.context.strokeStyle = '#685545';
+      this.context.stroke();
+
+      this.context.font = "12px Arial";
+      this.context.fillStyle = "#685545";
+      this.context.fillText("Use Code", this.context_width*0.5, this.context_height*0.5);
+      this.context.font = "10px Arial";
+      this.context.fillText("Fetching your reward..", this.context_width*0.5, this.context_height*0.55);
+
+      var xhttp;
+      if (window.XMLHttpRequest) {
+          xhttp = new XMLHttpRequest();
+          } else {
+          // code for IE6, IE5
+          xhttp = new ActiveXObject("Microsoft.XMLHTTP");
+      }
+      xhttp.onreadystatechange = function() {
+        if (xhttp.readyState == 4 && xhttp.status == 200) {
+          code = xhttp.responseText;
+          console.log(code);
+          if (code.length < 14){
+            var replayImg = document.getElementById('promo-img');
+            game.context.drawImage(replayImg, game.context_width*0.3, game.context_height*0.52, game.context_width*0.4, game.context_height*0.07);
+
+            game.context.fillStyle = "white";
+            game.context.font = "20px Arial";
+            game.context.fillText(code.toUpperCase(), game.context_width*0.5, game.context_height*0.57);
+          }
+          else {
+            game.drawRect(0, game.context_height*0.52,game.context_width,game.context_height*0.04,'#D3F4F3');
+            game.context.font = "10px Arial";
+            game.context.fillStyle = "#685545";
+            game.context.fillText(code, game.context_width*0.5, game.context_height*0.54);
+            //game.context.fillText("Or write to us at query@tinyowl.co.in to know more", game.context_width*0.5, game.context_height*0.56);
+          }
+        }
+      };
+      var scoreValue = game.getScoreValue(discount);
+      var url = "http://0.0.0.0:3000/restaurant/growth_hacks/sankrant_game_coupon?score_value="+scoreValue;
+      xhttp.open("GET", url, true);
+      xhttp.send();
+
+      this.context.beginPath();
+      this.context.moveTo(this.context_width*0.15,this.context_height*0.62);
+      this.context.lineTo(this.context_width*0.85,this.context_height*0.62);
+      this.context.lineWidth = 0.3;
+      this.context.strokeStyle = '#685545';
+      this.context.stroke();
+
+      this.context.fillStyle = "#685545";
+      this.context.font = "11px Arial";
+
+      this.context.fillText("Get extra 15% cashback when you", this.context_width*0.5, this.context_height*0.67);
+      this.context.fillText("pay through MobiKwik", this.context_width*0.5, this.context_height*0.70);
+    }
+
+    // Adding listner on Play button
+    window.addEventListener("mousedown", this.onPlayAgainClick, false);
+
+    // Making play button
+    var replayImg = document.getElementById('replay-img');
+    this.context.drawImage(replayImg, this.context_width*0.4, this.context_height*0.84,this.context_width*0.2,this.context_width*0.2*replayImg.height/replayImg.width);
+  }
+
+  this.onPlayAgainClick = function(event) {
+    x = event.pageX;
+    y = event.pageY;
+    if ( x >= game.context_width*0.4 && x <= game.context_width*0.6 && y >= game.context_height*0.8 && y <= game.context_height*0.8 + game.context_width*0.3) {
+       window.removeEventListener("mousedown", game.onPlayAgainClick, false);
+       game = new Game(ctx, question);
+       game.init();
+    }
+  }
+
+  // JS excryptor function
+  // discount = 5,10,20
+
+  this.getScoreValue = function (discount) {
+    var ts = Math.round((new Date()).getTime() / 1000)*2;
+    var d = discount.toString();
+    var calculated_discount;
+      if (d.length == 1) {
+        calculated_discount = d + ts;
+      }
+      else {
+        calculated_discount = d[0] + ts + d[1];
+      }
+    return calculated_discount;
+  }
 }
